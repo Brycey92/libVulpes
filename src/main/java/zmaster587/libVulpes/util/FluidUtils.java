@@ -7,6 +7,7 @@ import net.minecraftforge.fluids.*;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.capability.IFluidTankProperties;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -57,17 +58,39 @@ public class FluidUtils {
 		return fluidItem == null ? null : fluidItem.getTankProperties()[0].getContents();
 	}
 
+	public static boolean shouldFillContainer(@Nonnull ItemStack stack, IFluidTankProperties tankProperty) {
+		FluidStack fStack = getFluidForItem(stack);
+		if(fStack == null || tankProperty.getContents() == null) {
+			return false;
+		}
+
+		int fStackCapacity = getFluidItemCapacity(stack);
+		int tankContentsAmt = tankProperty.getContents().amount;
+
+		return (stack.getItem() == Items.BUCKET ||
+				(fStackCapacity != 1000 && fStack.amount > 0 && tankContentsAmt > 0) ||
+				(fStack.amount == 0 && tankContentsAmt > 0) ||
+				(fStack.amount < fStackCapacity && tankContentsAmt == tankProperty.getCapacity()));
+	}
+
 	//Use Forge methods to handle containers being put into inventories
 	public static boolean attemptDrainContainerIInv(EmbeddedInventory inv, IFluidHandler tank, @Nonnull ItemStack stack, int inputSlot, int outputSlot) {
 		if (containsFluid(stack)) {
 			boolean fill = false;
 			boolean toReturn = false;
-			FluidActionResult modifiedContainer = null;
-			if (!(stack.getItem() == Items.BUCKET) && (getFluidForItem(stack).amount == getFluidItemCapacity(stack) || tank.getTankProperties()[0].getContents().amount == 0)) {
-				modifiedContainer = FluidUtil.tryEmptyContainer(stack, tank, getFluidItemCapacity(stack), null, false);
-			} else {
+			FluidActionResult modifiedContainer;
+			FluidStack fStack = getFluidForItem(stack);
+			IFluidTankProperties tankProperty =  tank.getTankProperties()[0];
+
+			if(fStack == null || tankProperty.getContents() == null) {
+				return false;
+			}
+
+			if (shouldFillContainer(stack, tankProperty)) {
 				modifiedContainer = FluidUtil.tryFillContainer(stack, tank, getFluidItemCapacity(stack), null, false);
 				fill = true;
+			} else {
+				modifiedContainer = FluidUtil.tryEmptyContainer(stack, tank, getFluidItemCapacity(stack), null, false);
 			}
 				if (modifiedContainer.isSuccess()) {
 					if (inv.getStackInSlot(outputSlot).isEmpty()) {
