@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
         maven {
             name = "forge"
-            url = "http://files.minecraftforge.net/maven"
+            url = "https://files.minecraftforge.net/maven"
         }
         maven {
             name = "sonatype"
@@ -42,6 +42,7 @@ minecraft {
 
 apply from: "gradle/scripts/jars.gradle"
 apply from: "gradle/scripts/version.gradle"
+apply from: "gradle/scripts/maven.gradle"
 
 group= "zmaster587.libVulpes" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "LibVulpes"
@@ -166,5 +167,7 @@ task makeChangelog(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
 {{/tags}}
 """
 }
+
+
 
 tasks.build.dependsOn makeChangelog
